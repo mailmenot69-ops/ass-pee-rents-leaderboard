@@ -1,9 +1,9 @@
 
         let rawData = [];
         let currentSubject = 'overall';
-
+        const API =
         async function loadData() {
-            const res = await fetch('http://localhost:5000/api/leaderboard');
+            const res = await fetch(`${API}/api/leaderboard`);
             rawData = await res.json();
             
             // Populate Date Selector
