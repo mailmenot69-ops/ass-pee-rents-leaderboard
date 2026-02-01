@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Bulk Entry</title>
+</head>
+<body style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f9; margin: 0; padding: 40px; display: flex; justify-content: center;">
+
+  <div style="background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 800px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 1.5rem;">
+      <h2 style="margin: 0; color: #1e293b; font-size: 1.5rem;">Daily Score Entry</h2>
+      
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <label style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Date:</label>
+        <input id="date" placeholder="DD/MM/YYYY" 
+          style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 0.9rem;" 
+          onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#cbd5e1'" />
+      </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 2rem; text-align: left;">
+        <thead>
+          <tr style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+            <th style="padding: 12px; color: #475569; font-weight: 600; font-size: 0.9rem;">Player</th>
+            <th style="padding: 12px; color: #475569; font-weight: 600; font-size: 0.9rem;">SQL</th>
+            <th style="padding: 12px; color: #475569; font-weight: 600; font-size: 0.9rem;">Coding</th>
+            <th style="padding: 12px; color: #475569; font-weight: 600; font-size: 0.9rem;">DSA</th>
+          </tr>
+        </thead>
+        <tbody id="score-table">
+          </tbody>
+      </table>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+      <button onclick="submitAll()" 
+        style="padding: 12px 24px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);" 
+        onmouseover="this.style.backgroundColor='#059669'" 
+        onmouseout="this.style.backgroundColor='#10b981'">
+        Submit All Scores
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const API = "http://localhost:5000";
+    let players = [];
+
+    async function loadPlayers() {
+      try {
+        const res = await fetch(`${API}/api/leaderboard`);
+        players = await res.json();
+
+        const tbody = document.getElementById("score-table");
+        tbody.innerHTML = ""; // Clear existing
+
+        players.forEach((p, index) => {
+          const row = document.createElement("tr");
+          // Zebra striping logic via inline style
+          row.style.borderBottom = "1px solid #f1f5f9";
+          if (index % 2 === 0) row.style.backgroundColor = "#ffffff";
+          else row.style.backgroundColor = "#fbfcfe";
+
+          row.innerHTML = `
+            <td style="padding: 12px; color: #1e293b; font-weight: 500;">${p.name}</td>
+            <td style="padding: 12px;"><input type="number" data-name="${p.name}" data-field="sql" value="0" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px;"></td>
+            <td style="padding: 12px;"><input type="number" data-name="${p.name}" data-field="coding" value="0" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px;"></td>
+            <td style="padding: 12px;"><input type="number" data-name="${p.name}" data-field="dsa" value="0" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px;"></td>
+          `;
+
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        console.error("Error loading players:", err);
+      }
+    }
+
+    async function submitAll() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Not logged in");
+        return;
+      }
+
+      const date = document.getElementById("date").value;
+      if (!date) {
+        alert("Please enter a date");
+        return;
+      }
+
+      const inputs = document.querySelectorAll("input[data-name]");
+      const map = {};
+
+      inputs.forEach(i => {
+        const name = i.dataset.name;
+        const field = i.dataset.field;
+
+        if (!map[name]) map[name] = { name, sql: 0, coding: 0, dsa: 0 };
+        map[name][field] = Number(i.value);
+      });
+
+      const scores = Object.values(map);
+
+      try {
+        const res = await fetch(`${API}/api/leaderboard/bulk-update`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          body: JSON.stringify({ date, scores })
+        });
+
+        const data = await res.json();
+        alert(data.message || "Scores updated successfully!");
+      } catch (err) {
+        alert("Error submitting scores");
+      }
+    }
+
+    loadPlayers();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f9; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh;">
+
+  <div style="background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 360px;">
+    
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <h2 style="margin: 0; color: #1e293b; font-size: 1.5rem;">Admin Login</h2>
+      <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">Please enter your credentials</p>
+    </div>
+
+    <div style="margin-bottom: 1.25rem;">
+      <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.5rem;">Email Address</label>
+      <input id="email" type="email" placeholder="admin@example.com" 
+        style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; outline: none; transition: border-color 0.2s;"
+        onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#cbd5e1'" />
+    </div>
+
+    <div style="margin-bottom: 2rem;">
+      <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.5rem;">Password</label>
+      <input id="password" type="password" placeholder="••••••••" 
+        style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; outline: none; transition: border-color 0.2s;"
+        onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#cbd5e1'" />
+    </div>
+
+    <button onclick="login()" 
+      style="width: 100%; padding: 12px; background-color: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s;" 
+      onmouseover="this.style.backgroundColor='#2563eb'" 
+      onmouseout="this.style.backgroundColor='#3b82f6'">
+      Sign In
+    </button>
+
+    <p style="text-align: center; margin-top: 1.5rem; font-size: 0.8rem; color: #94a3b8;">
+      Secure Admin Access Only
+    </p>
+  </div>
+
+  <script>
+    const API = "http://localhost:5000";
+
+    async function login() {
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+
+      try {
+        const res = await fetch(`${API}/api/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: emailInput.value,
+            password: passwordInput.value
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+          alert("Login successful");
+          window.location.href = "admin-dashboard.html";
+        } else {
+          alert(data.message || "Login failed");
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("Server connection failed");
+      }
+    }
+  </script>
+
+</body>
+</html>
