@@ -29,7 +29,4 @@ app.get("/", (req, res) => {
   res.send("Leaderboard API running");
 });
 
-// Local testing only
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
-});
+module.exports = app;
