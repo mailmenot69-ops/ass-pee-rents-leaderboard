@@ -10,29 +10,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
+// ---- MongoDB connection (serverless-safe) ----
+let cachedConn = null;
 
 async function connectDB() {
-  if (cached.conn) return cached.conn;
-
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(process.env.MONGO_URI, {
-      bufferCommands: false,
-      maxPoolSize: 5,
-    }).then((mongoose) => mongoose);
+  if (cachedConn) {
+    return cachedConn;
   }
 
-  cached.conn = await cached.promise;
-  return cached.conn;
+  cachedConn = await mongoose.connect(process.env.MONGO_URI, {
+    bufferCommands: false,
+    maxPoolSize: 5,
+  });
+
+  return cachedConn;
 }
 
-// IMPORTANT: connect BEFORE routes
-connectDB();
+// Middleware: ENSURE DB connected before routes
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("MongoDB connection failed:", err);
+    res.status(500).json({ message: "Database connection failed" });
+  }
+});
 
+// ---- Routes ----
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/auth", authRoutes);
 
