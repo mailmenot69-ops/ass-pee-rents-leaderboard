@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Player Analytics</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-[#0b0f1a] text-slate-200 min-h-screen p-8">
+
+  <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <!-- LEFT PANEL -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- Header -->
+      <div>
+        <h1 id="playerName" class="text-4xl font-black text-white"></h1>
+        <p class="text-slate-400 uppercase tracking-widest text-sm mt-1">
+          Performance Analytics Dashboard
+        </p>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-800 p-4 rounded-xl">
+          <p class="text-xs uppercase text-slate-400">Sessions</p>
+          <p id="sessionsCount" class="text-2xl font-bold text-white"></p>
+        </div>
+
+        <div class="bg-slate-800 p-4 rounded-xl">
+          <p class="text-xs uppercase text-slate-400">Best Score</p>
+          <p id="bestScore" class="text-2xl font-bold text-blue-400"></p>
+        </div>
+
+        <div class="bg-slate-800 p-4 rounded-xl">
+          <p class="text-xs uppercase text-slate-400">Average</p>
+          <p id="avgScore" class="text-2xl font-bold text-green-400"></p>
+        </div>
+
+        <div class="bg-slate-800 p-4 rounded-xl">
+          <p class="text-xs uppercase text-slate-400">Strongest</p>
+          <p id="strongest" class="text-2xl font-bold text-orange-400"></p>
+        </div>
+      </div>
+
+      <!-- Line Chart -->
+      <div class="bg-slate-800 p-6 rounded-2xl">
+        <h3 class="text-lg font-bold mb-4">Subject Progress Over Time</h3>
+        <canvas id="lineChart" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="bg-slate-800 p-6 rounded-2xl flex flex-col justify-between">
+      <div>
+        <h3 class="text-lg font-bold mb-4">Subject Contribution</h3>
+        <canvas id="donutChart"></canvas>
+      </div>
+
+      <p class="text-xs text-slate-400 mt-6">
+        Hover on chart segments to explore contribution distribution.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const API = ;
+
+    const params = new URLSearchParams(window.location.search);
+    const name = params.get("name");
+
+    document.getElementById("playerName").innerText = name;
+
+    async function loadPlayer() {
+      const res = await fetch(`${API}/api/leaderboard`);
+      const data = await res.json();
+
+      const player = data.find(p => p.name === name);
+      if (!player) return;
+
+      const sessions = player.sessions;
+      const dates = sessions.map(s => s.date);
+
+      const sql = sessions.map(s => s.sql || 0);
+      const coding = sessions.map(s => s.coding || 0);
+      const dsa = sessions.map(s => s.dsa || 0);
+
+      const totals = sessions.map((_, i) => sql[i] + coding[i] + dsa[i]);
+
+      // KPI calculations
+      document.getElementById("sessionsCount").innerText = sessions.length;
+      document.getElementById("bestScore").innerText = Math.max(...totals);
+      document.getElementById("avgScore").innerText =
+        Math.round(totals.reduce((a,b)=>a+b,0)/totals.length || 0);
+
+      const subjectTotals = {
+        SQL: sql.reduce((a,b)=>a+b,0),
+        Coding: coding.reduce((a,b)=>a+b,0),
+        DSA: dsa.reduce((a,b)=>a+b,0)
+      };
+
+      document.getElementById("strongest").innerText =
+        Object.keys(subjectTotals).reduce((a,b)=>
+          subjectTotals[a] > subjectTotals[b] ? a : b
+        );
+
+      // Line chart
+      new Chart(document.getElementById("lineChart"), {
+        type: "line",
+        data: {
+          labels: dates,
+          datasets: [
+            { label: "SQL", data: sql, borderColor: "#22c55e", tension: 0.4 },
+            { label: "Coding", data: coding, borderColor: "#3b82f6", tension: 0.4 },
+            { label: "DSA", data: dsa, borderColor: "#f97316", tension: 0.4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: "#cbd5f5" } } },
+          scales: {
+            x: { ticks: { color: "#94a3b8" } },
+            y: { ticks: { color: "#94a3b8" } }
+          }
+        }
+      });
+
+      // Doughnut chart
+      new Chart(document.getElementById("donutChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["SQL", "Coding", "DSA"],
+          datasets: [{
+            data: Object.values(subjectTotals),
+            backgroundColor: ["#22c55e", "#3b82f6", "#f97316"]
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { position: "bottom", labels: { color: "#e5e7eb" } }
+          }
+        }
+      });
+    }
+
+    loadPlayer();
+  </script>
+</body>
+</html>
