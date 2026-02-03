@@ -95,7 +95,11 @@
         return `
             <tr class="border-b border-slate-800/40 hover:bg-slate-800/20 transition">
                 <td class="p-6">${getRankBadge(i)}</td>
-                <td class="p-6 font-bold text-white">${p.name}${showTrophy}</td>
+                <td class="p-6 font-bold text-blue-400 cursor-pointer hover:underline"
+                                onclick="openPlayer('${p.name}')">
+                        ${p.name}${showTrophy}
+                </td>
+
                 <td class="p-6 text-right font-mono text-xl text-blue-400">${p.val}${p.suffix || ''}</td>
             </tr>
         `;
@@ -140,6 +144,10 @@ function logout() {
   localStorage.removeItem("token");
   alert("Logged out");
   location.reload();
+}
+
+function openPlayer(name) {
+  window.location.href = `player.html?name=${encodeURIComponent(name)}`;
 }
 
 
