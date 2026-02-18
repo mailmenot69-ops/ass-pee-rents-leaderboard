@@ -1,7 +1,7 @@
 
         let rawData = [];
         let currentSubject = 'overall';
-        const API = "https://ass-pee-rents-leaderboard.vercel.app";
+        const API = "https://aspirants-score-leaderboard.vercel.app";
         async function loadData() {
             const res = await fetch(`${API}/api/leaderboard`);
             rawData = await res.json();
